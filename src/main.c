@@ -4,9 +4,13 @@
 #include <SDL.h>
 
 bool is_running = false;
+
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
+
 uint32_t* color_buffer = NULL;
+SDL_Texture* color_buffer_texture = NULL;
+
 int window_width = 800;
 int window_height = 600;
 
@@ -16,6 +20,13 @@ bool initialize_window(void) {
         return false;
     }
 
+    // get the screen size
+    SDL_DisplayMode display_mode;
+    SDL_GetCurrentDisplayMode(0, &display_mode);
+    window_width = display_mode.w;
+    window_height = display_mode.h;
+
+    // Create a window
     window = SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED,
@@ -30,16 +41,30 @@ bool initialize_window(void) {
         return false;
     }
 
+    // create an SDL renderer
     renderer = SDL_CreateRenderer(window, -1, 0);
     if (!renderer) {
         fprintf(stderr, "Error creating SDL renderer.\n");
         return false;
     }
+
+    //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+
     return true;
 }
 
 void setup() {
+    // allocate the required memory in bytes to hold the color buffer
     color_buffer = (uint32_t*) malloc(sizeof(uint32_t) * window_width * window_height);
+
+    // creating an SDL texture that is used to display the color buffer
+    color_buffer_texture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        window_width,
+        window_height
+    );
 }
 
 void process_input() {
@@ -59,7 +84,31 @@ void process_input() {
 }
 
 void update() {
+    
+}
 
+void draw_grid(int grid_size, uint32_t grid_color) {
+    for (int y = 0; y < window_height; y += grid_size) {
+        for (int x = 0; x < window_height; x += grid_size) {
+            color_buffer[(window_width * y) + x] = grid_color;
+        }
+    }
+}
+
+void render_color_buffer(void) {
+    SDL_UpdateTexture(
+        color_buffer_texture,
+        NULL,
+        color_buffer,
+        (int)(window_width * sizeof(uint32_t))
+    );
+
+    SDL_RenderCopy(
+        renderer,
+        color_buffer_texture,
+        NULL,
+        NULL
+    );
 }
 
 void clear_color_buffer(uint32_t color) {
@@ -71,11 +120,9 @@ void clear_color_buffer(uint32_t color) {
 }
 
 void render() {
-    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
-    SDL_RenderClear(renderer);
-
-    clear_color_buffer(0xFFFFFF00);
-
+    draw_grid(10, 0xFFFFFFFF);
+    render_color_buffer();
+    clear_color_buffer(0xFF000000);
     SDL_RenderPresent(renderer);
 }
 
