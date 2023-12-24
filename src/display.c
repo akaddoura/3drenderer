@@ -46,6 +46,12 @@ bool initialize_window(void) {
     return true;
 }
 
+void draw_pixel(int x, int y, uint32_t color) {
+    if (x < window_width && y < window_height) {
+        color_buffer[window_width * y + x] = color;
+    }
+}
+
 void draw_grid(int grid_size, uint32_t grid_color, bool dotted) {
     for (int y = 0; y < window_height; dotted ? y += grid_size : y++) {
         for (int x = 0; x < window_width; dotted ? x += grid_size : x++) {
