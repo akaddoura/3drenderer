@@ -4,6 +4,16 @@
 #include <SDL.h>
 
 #include "display.h"
+#include "vector.h"
+
+/**************************************
+ * Declare an array of vectors/points *
+ **************************************/
+#define N_POINTS (9 * 9 * 9)
+vec3_t cube_points[N_POINTS];
+vec2_t projected_points[N_POINTS];
+
+float fov_factor = 500;
 
 bool is_running = false;
 
@@ -19,7 +29,19 @@ void setup() {
         window_width,
         window_height
     );
-}
+
+    int point_count = 0;
+
+    // start loading an array of vectors from -1 to 1 for a 9x0x9 cube
+    for (float x = -1; x <= 1; x += 0.25) {
+        for (float y = -1; y <= 1; y += 0.25) {
+            for (float z = -1; z <= 1; z += 0.25) {
+                vec3_t new_point = { .x = x, .y = y, .z = z };
+                cube_points[point_count++] = new_point;
+            }
+        }
+    }
+}   
 
 void process_input() {
     SDL_Event event;
@@ -37,13 +59,42 @@ void process_input() {
     }
 }
 
+/*
+ * projects a 3d vector to 2d
+ */
+vec2_t project(vec3_t point) {
+    vec2_t projected_point = {
+        .x = fov_factor * point.x,
+        .y = fov_factor * point.y
+    };
+    return projected_point;
+}
+
 void update() {
-    
+    for (int i = 0; i < N_POINTS; ++i) {
+        vec3_t point = cube_points[i];
+
+        // project the current point and save it
+        vec2_t projected_point = project(point);
+        projected_points[i] = projected_point;
+    }
 }
 
 void render() {
     draw_grid(10, 0x32323232, true);
-    draw_rect(100, 100, 100, 100, 0xFF00FFFF);
+    
+    // loop through all projects points and render them
+    for (int i = 0; i < N_POINTS; ++i) {
+        vec2_t projected_point = projected_points[i];
+        draw_rect(
+            projected_point.x + (window_width/2),
+            projected_point.y + (window_height/2),
+            4,
+            4,
+            0xFFFFFF00
+        );
+    }
+    
     render_color_buffer();
     clear_color_buffer(0xFF000000);
     SDL_RenderPresent(renderer);
@@ -53,6 +104,8 @@ int main(int argc, char* arg[]) {
     is_running = initialize_window();
 
     setup();
+    
+    
 
     while (is_running) {
         process_input();
