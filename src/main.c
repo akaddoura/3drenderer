@@ -16,9 +16,10 @@ vec2_t projected_points[N_POINTS];
 vec3_t camera_position = { .x = 0.0f, .y = 0.0f, .z = -5.0f };
 vec3_t cube_rotation = { .x = 0, .y = 0, .z = 0 };
 
-float fov_factor = 500;
+float fov_factor = 640;
 
 bool is_running = false;
+int previous_frame_time = 0;
 
 void setup() {
     // allocate the required memory in bytes to hold the color buffer
@@ -74,6 +75,17 @@ vec2_t project(vec3_t point) {
 }
 
 void update() {
+
+    // wait some time until we reach the target frame time in milliseconds
+    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+
+    // delay execution if we are running too fast
+    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+        SDL_Delay(time_to_wait);
+    }
+
+    previous_frame_time = SDL_GetTicks();
+
     cube_rotation.x += 0.01f;
     cube_rotation.y += 0.01f;
     cube_rotation.z += 0.01f;
